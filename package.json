@@ -28,12 +28,7 @@
     ],
   "extensionPack": [
     "bierner.github-markdown-preview",
-    "bierner.markdown-checkbox",
-    "bierner.markdown-emoji",
-    "bierner.markdown-footnotes",
     "bierner.markdown-image-size",
-    "bierner.markdown-preview-github-styles",
-    "bierner.markdown-mermaid",
     "bierner.markdown-shiki",
     "codacy-app.codacy",
     "DavidAnson.vscode-markdownlint",
