@@ -1,0 +1,49 @@
+{
+    "name": "pspreworkout-powershell-extension-pack",
+    "displayName": "PSPreworkout Powershell Extension Pack",
+    "description": "A pack of extensions to enhance your work on PowerShell projects in Visual Studio Code.",
+    "version": "0.0.1",
+    "publisher": "sam-erde",
+    "engines": {
+        "vscode": "^1.50.0"
+    },
+    "categories": [
+        "Extension Packs"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/SamErde/PSPreworkout-Extensions.git"
+    },
+    "bugs": {
+        "url": "https://github.com/SamErde/PSPreworkout-Extensions/issues"
+    },
+    "extensionPack": [
+        "bierner.markdown-checkbox",
+        "bierner.markdown-mermaid",
+        "bierner.markdown-emoji",
+        "bierner.markdown-footnotes",
+        "bierner.markdown-preview-github-styles",
+        "bierner.markdown-shiki",
+        "bierner.github-markdown-preview",
+        "donjayamanne.githistory",
+        "EditorConfig.EditorConfig",
+        "github.vscode-pull-request-github",
+        "GlenBuktenica.unicode-substitutions",
+        "louiswt.regexp-preview",
+        "ms-vscode.powershell",
+        "oderwat.indent-rainbow",
+        "streetsidesoftware.code-spell-checker",
+        "tylerleonhardt.vscode-inline-values-powershell",
+        "usernamehw.errorlens",
+        "vscode-icons-team.vscode-icons"
+    ],
+    "icon": "images/logo.png",
+    "author": {
+        "name": "Sam Erde",
+        "url": "https://twitter.com/SamErde"
+    },
+    "keywords": [
+        "powershell",
+        "pwsh"
+    ]
+}

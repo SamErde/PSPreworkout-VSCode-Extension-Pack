@@ -1,2 +1,2 @@
-# PSPreworkout-VSCode-Extension-Pack
-A pack of VS Code extensions for working with PowerShell projects.
+# PSPreworkout Extensions
+A bundle of extensions to optimize your Visual Studio Code environment while working on PowerShell projects.

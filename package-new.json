@@ -1,0 +1,45 @@
+{
+  "name": "pspreworkout-extensions-pack",
+  "displayName": "PSPreworkout PowerShell Extensions Pack",
+  "description": "A pack of extensions to optimize your Visual Studio Code environment while working on PowerShell projects.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Extension Packs"
+  ],
+  "extensionPack": [
+    "bierner.github-markdown-preview",
+    "bierner.markdown-checkbox",
+    "bierner.markdown-emoji",
+    "bierner.markdown-footnotes",
+    "bierner.markdown-image-size",
+    "bierner.markdown-preview-github-styles",
+    "bierner.markdown-mermaid",
+    "bierner.markdown-shiki",
+    "codacy-app.codacy",
+    "DavidAnson.vscode-markdownlint",
+    "donjayamanne.githistory",
+    "eamodio.gitlens",
+    "editorconfig.editorconfig",
+    "georgejames.thefoldingstuff",
+    "github.remotehub",
+    "ms-vscode.remote-repositories",
+    "github.vscode-github-actions",
+    "github.vscode-pull-request-github",
+    "glenbuktenica.unicode-substitutions",
+    "humao.rest-client",
+    "louiswt.regexp-preview",
+    "mechatroner.rainbow-csv",
+    "ms-vscode.powershell",
+    "oderwat.indent-rainbow",
+    "pspester.pester-test",
+    "ryanluker.vscode-coverage-gutters",
+    "streetsidesoftware.code-spell-checker",
+    "tylerleonhardt.vscode-inline-values-powershell",
+    "usernamehw.errorlens",
+    "vscode-icons-team.vscode-icons",
+    "vsls-contrib.codetour"
+  ]
+}
