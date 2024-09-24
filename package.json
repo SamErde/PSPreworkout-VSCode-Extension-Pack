@@ -1,31 +1,31 @@
 {
   "name": "pspreworkout-powershell-extensions-pack",
-  "displayName": "PSPreworkout PowerShell Extensions Pack",
-  "description": "A pack of extensions to optimize your Visual Studio Code environment while working on PowerShell projects.",
-  "version": "0.0.2",
+  "displayName": "PSPreworkout PowerShell Pack",
+  "description": "A pack of extensions to optimize your work on PowerShell projects in Visual Studio Code.",
+  "version": "0.0.4",
   "publisher": "SamErde",
-  "engines": {
-    "vscode": "^1.5.0"
+  "author": {
+    "name": "Sam Erde",
+    "url": "https://twitter.com/SamErde"
   },
+  "icon": "images/PSPreworkout-Extension-Pack-Logo-120.png",
   "categories": [
     "Extension Packs"
   ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/SamErde/PSPreworkout-VSCode-Extension-Pack.git"
-    },
-    "bugs": {
-        "url": "https://github.com/SamErde/PSPreworkout-Extensions/issues"
-    },
-    "icon": "images/logo.png",
-    "author": {
-        "name": "Sam Erde",
-        "url": "https://twitter.com/SamErde"
-    },
-    "keywords": [
-        "powershell",
-        "pwsh"
-    ],
+  "keywords": [
+    "powershell",
+    "pwsh"
+  ],
+  "engines": {
+    "vscode": "^1.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SamErde/PSPreworkout-VSCode-Extension-Pack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SamErde/PSPreworkout-Extensions/issues"
+  },
   "extensionPack": [
     "bierner.github-markdown-preview",
     "bierner.markdown-image-size",
