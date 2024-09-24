@@ -5,7 +5,7 @@
 
 A bundle of extensions to optimize your Visual Studio Code environment while working on PowerShell projects.
 
-![PSPreworkout Logo (Designed with Microsoft Designer)](images/PSPreworkout-Extension-Pack-Banner.png)
+![PSPreworkout Logo (Designed with Microsoft Designer)](https://raw.githubusercontent.com/SamErde/PSPreworkout-VSCode-Extension-Pack/main/images/PSPreworkout-Extension-Pack-Banner.png)
 
 This pack of extensions contains the tools that I most often rely on while working on PowerShell modules and scripts. My workflow involves managing all code on GitHub. It usually also involves creating documentation in Markdown. As a result, I consider GitHub and Markdown-related extensions to be key components of this pack.
 However, if you prefer, you can still selectively install only the extensions that you want to use.
