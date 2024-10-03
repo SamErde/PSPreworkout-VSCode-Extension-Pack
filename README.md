@@ -11,3 +11,32 @@ This pack of extensions contains the tools that I most often rely on while worki
 However, if you prefer, you can still selectively install only the extensions that you want to use.
 
 **Note:** All credit and much gratitude goes out to the awesome community members and organizations that have freely made these extensions available. I have not created any of them myself.
+
+## Extensions Included
+
+- GitHub Markdown Preview (Matt Bierner)
+- Markdown Image Size (Matt Bierner)
+- Markdown Preview VS Code Highlighting (Matt Bierner)
+- Codacy (Codacy)
+- markdownlint (David Anson)
+- Git History (Don Jayamanne)
+- GitLens (GitKraken)
+- EditorConfig for VS Code (EditorConfig)
+- The Folding Stuff (George James Software)
+- GitHub Repositories (GitHub)
+- Remote Repositories (Microsoft)
+- GitHub Actions (GitHub)
+- GitHub Pull Requests (GitHub)
+- unicode-Substitutions (GlenBuktenica)
+- REST Client (Huachao Mao)
+- Regex Explain (LouisWT)
+- Rainbow CSV (mechatroner)
+- PowerShell (Microsoft)
+- indent-rainbow (oderwat)
+- Pester Tests (Pester)
+- Coverage Gutters (ryanluker)
+- Code Spell Checker (Side Software)
+- Invalues Support for PowerShell (Tyler Leonhardt)
+- Error Lens (Alexander)
+- vscode-icons (VSCode Icons Team)
+- CodeTour (Jonathan Carter)
