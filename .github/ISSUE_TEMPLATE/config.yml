@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & Discussions ✍️
+    url: https://github.com/SamErde/PSPreworkout-VSCode-Extension-Pack/discussions
+    about: Please use GitHub discussions for any questions.
+#  - name: Basic FAQs ❓
+#    url: https://github.com/SamErde/PSPreworkout-VSCode-Extension-Pack/wiki/FAQs
+#    about: Answers to the Basic Frequently Asked Questions
