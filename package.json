@@ -1,12 +1,12 @@
 {
   "name": "pspreworkout-powershell-extensions-pack",
-  "displayName": "PSPreworkout PowerShell Pack",
-  "description": "A pack of extensions to optimize your work on PowerShell projects in Visual Studio Code.",
-  "version": "0.0.6",
+  "displayName": "PowerShell Preworkout (PSPreworkout) Extension Pack",
+  "description": "PSPreworkout is a pack of extensions to optimize your work on PowerShell projects in Visual Studio Code.",
+  "version": "0.1.0",
   "publisher": "SamErde",
   "author": {
     "name": "Sam Erde",
-    "url": "https://twitter.com/SamErde"
+    "url": "https://day3bits.com"
   },
   "icon": "images/logo.png",
   "categories": [
@@ -14,7 +14,8 @@
   ],
   "keywords": [
     "powershell",
-    "pwsh"
+    "pwsh",
+    "preworkout"
   ],
   "engines": {
     "vscode": "^1.5.0"
@@ -27,24 +28,25 @@
     "url": "https://github.com/SamErde/PSPreworkout-Extensions/issues"
   },
   "extensionPack": [
+    "adpyke.codesnap",
     "bierner.github-markdown-preview",
-    "bierner.markdown-image-size",
-    "bierner.markdown-shiki",
     "codacy-app.codacy",
     "DavidAnson.vscode-markdownlint",
     "donjayamanne.githistory",
     "eamodio.gitlens",
     "editorconfig.editorconfig",
     "georgejames.thefoldingstuff",
+    "github.codespaces",
     "github.remotehub",
-    "ms-vscode.remote-repositories",
     "github.vscode-github-actions",
     "github.vscode-pull-request-github",
     "glenbuktenica.unicode-substitutions",
-    "humao.rest-client",
     "louiswt.regexp-preview",
     "mechatroner.rainbow-csv",
     "ms-vscode.powershell",
+    "ms-vscode.remote-repositories",
+    "ms-vscode-remote.remote-wsl",
+    "ms-vscode-remote.remote-wsl-recommender",
     "oderwat.indent-rainbow",
     "pspester.pester-test",
     "ryanluker.vscode-coverage-gutters",
