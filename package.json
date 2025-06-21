@@ -45,8 +45,6 @@
     "mechatroner.rainbow-csv",
     "ms-vscode.powershell",
     "ms-vscode.remote-repositories",
-    "ms-vscode-remote.remote-wsl",
-    "ms-vscode-remote.remote-wsl-recommender",
     "oderwat.indent-rainbow",
     "pspester.pester-test",
     "ryanluker.vscode-coverage-gutters",
