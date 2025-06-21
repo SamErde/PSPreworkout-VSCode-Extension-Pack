@@ -12,11 +12,12 @@ Repository configuration, community health files, and metadata have been updated
 
 ### Added
 
-- d
+- `github.codespaces`
 
 ### Removed
 
-- d
+- `bierner.markdown-image-size`: a helpful plugin, but probably only relevant if blogging or writing documentation
+- `humao.rest-client`
 
 ## [0.0.1] - 2024-09-23
 
