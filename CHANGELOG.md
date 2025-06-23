@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-06-21
+## [0.1.2] - 2025-06-21
 
 Repository configuration, community health files, and metadata have been updated in addition to the changes noted below.
 
@@ -25,4 +25,4 @@ Repository configuration, community health files, and metadata have been updated
 
 [Unreleased]: https://github.com/SamErde/PSPreworkout-VSCode-Extensions-Pack/compare/latest...HEAD
 [0.0.1]: https://github.com/samerde/PSPreworkout-VSCode-Extensions-Pack/tag/v0.0.1
-[0.1.0]: https://github.com/samerde/PSPreworkout-VSCode-Extensions-Pack/tag/v0.1.0
+[0.1.2]: https://github.com/samerde/PSPreworkout-VSCode-Extensions-Pack/tag/v0.1.0
