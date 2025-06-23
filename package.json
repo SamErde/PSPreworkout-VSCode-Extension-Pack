@@ -1,8 +1,8 @@
 {
-  "name": "pspreworkout-powershell-extensions-pack",
+  "name": "powershell-preworkout-extension-pack",
   "displayName": "PowerShell Preworkout (PSPreworkout) Extension Pack",
-  "description": "PSPreworkout is a pack of extensions to optimize your work on PowerShell projects in Visual Studio Code.",
-  "version": "0.1.0",
+  "description": "PowerShell Preworkout (PSPPreworkout) is a pack of Visual Studio Code extensions to optimize your work on PowerShell projects and documentation.",
+  "version": "0.1.1",
   "publisher": "SamErde",
   "author": {
     "name": "Sam Erde",
