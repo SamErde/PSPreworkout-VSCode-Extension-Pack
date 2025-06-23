@@ -22,6 +22,10 @@ $BaseUri = 'https://marketplace.visualstudio.com/items?itemName='
 $ShieldBaseUri = 'https://img.shields.io/visual-studio-marketplace'
 $ShieldStyle = 'flat-square'
 
+<#
+    Use `vsce show --json 'SamErde.pspreworkout-powershell-extensions-pack'` instead of IWR.
+#>
+
 # Initialize StringBuilder for all extension rows
 $AllExtensionRows = [System.Text.StringBuilder]::new()
 
