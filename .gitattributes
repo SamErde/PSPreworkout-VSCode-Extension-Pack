@@ -1,2 +1,6 @@
-# Set default behavior to automatically normalize line endings.
-* text=auto
+# Set default behavior to normalize line endings across environments.
+* text=auto eol=lf
+
+*.ps1 text working-tree-encoding=UTF-8
+*.png binary
+*.vsix binary

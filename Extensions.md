@@ -1,3 +1,5 @@
+# Extensions
+
 | Extension | Publisher | Version | Description | Installs | Last Updated |
 |-----------|-----------|---------|-------------|----------|--------------|
 |[CodeSnap](https://marketplace.visualstudio.com/items?itemName=adpyke.codesnap)|adpyke|1.3.4|📷 Take beautiful screenshots of your code|![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/adpyke.codesnap?style=flat-square)|![Visual Studio Marketplace Last Updated](https://img.shields.io/visual-studio-marketplace/last-updated/adpyke.codesnap?style=flat-square)|

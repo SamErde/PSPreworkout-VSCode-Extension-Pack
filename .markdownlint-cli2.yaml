@@ -1,0 +1,13 @@
+globs:
+  - '**/*.md'
+
+ignores:
+  - 'node_modules/**'
+  - 'dist/**'
+  - '.github/copilot-instructions.md'
+
+config:
+  MD013: false
+  MD060: false
+  MD024:
+    siblings_only: true
