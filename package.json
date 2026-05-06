@@ -18,14 +18,26 @@
     "preworkout"
   ],
   "engines": {
-    "vscode": "^1.5.0"
+    "vscode": "^1.100.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/SamErde/PSPreworkout-VSCode-Extension-Pack.git"
   },
   "bugs": {
-    "url": "https://github.com/SamErde/PSPreworkout-Extensions/issues"
+    "url": "https://github.com/SamErde/PSPreworkout-VSCode-Extension-Pack/issues"
+  },
+  "scripts": {
+    "prepackage": "node -e \"require('node:fs').mkdirSync('dist',{recursive:true})\"",
+    "package": "vsce package --no-dependencies --skip-license --out dist/pspreworkout-powershell-extensions-pack.vsix",
+    "lint:markdown": "markdownlint-cli2",
+    "lint:spelling": "cspell .",
+    "validate": "npm run lint:markdown && npm run lint:spelling && npm run package"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "3.9.1",
+    "cspell": "^10.0.0",
+    "markdownlint-cli2": "^0.22.1"
   },
   "extensionPack": [
     "adpyke.codesnap",
