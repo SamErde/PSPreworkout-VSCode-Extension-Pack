@@ -33,7 +33,6 @@
     "codacy-app.codacy",
     "DavidAnson.vscode-markdownlint",
     "donjayamanne.githistory",
-    "eamodio.gitlens",
     "editorconfig.editorconfig",
     "georgejames.thefoldingstuff",
     "github.codespaces",
@@ -51,7 +50,6 @@
     "streetsidesoftware.code-spell-checker",
     "tylerleonhardt.vscode-inline-values-powershell",
     "usernamehw.errorlens",
-    "vscode-icons-team.vscode-icons",
-    "vsls-contrib.codetour"
+    "vscode-icons-team.vscode-icons"
   ]
 }
