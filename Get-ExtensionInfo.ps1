@@ -53,8 +53,6 @@ param(
     [switch]$PassThru
 )
 
-Set-StrictMode -Version Latest
-
 function Get-ExtensionPackItem {
     <#
     .SYNOPSIS
@@ -472,5 +470,6 @@ function Update-ExtensionInfoDocument {
 }
 
 if ($MyInvocation.InvocationName -ne '.') {
+    Set-StrictMode -Version Latest
     Update-ExtensionInfoDocument -PackagePath $PackagePath -OutputPath $OutputPath -VscePath $VscePath -PassThru:$PassThru
 }
