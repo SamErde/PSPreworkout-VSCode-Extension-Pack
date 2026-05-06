@@ -30,15 +30,14 @@
 #>
 
 [CmdletBinding()]
+[OutputType([String])]
 param(
     [Parameter()]
     [ValidateScript({
-            if (Test-Path -Path $_ -PathType Leaf) {
-                return $true
-            }
-
-            throw "Package path '$_' does not exist or is not a file."
-        })]
+        if (Test-Path -Path $_ -PathType Leaf) {
+            return $true
+        }
+    })]
     [string]$PackagePath = (Join-Path -Path $PSScriptRoot -ChildPath 'package.json'),
 
     [Parameter()]
