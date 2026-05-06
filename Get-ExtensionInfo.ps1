@@ -11,6 +11,10 @@
     Generates Extensions.md with information about all extensions listed in package.json
 #>
 
+[CmdletBinding()]
+[OutputType([String])]
+param ()
+
 # Ensure package.json exists
 if (-not (Test-Path -Path '.\package.json')) {
     throw 'package.json not found in current directory'
