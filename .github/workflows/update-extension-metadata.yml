@@ -1,0 +1,62 @@
+name: Update extension metadata
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 9 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-extension-metadata
+  cancel-in-progress: false
+
+jobs:
+  update-extension-metadata:
+    name: Update extension metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Update extension metadata
+        shell: pwsh
+        run: |
+          ./Get-ExtensionInfo.ps1 `
+            -PackagePath ./package.json `
+            -OutputPath ./Extensions.md `
+            -ReadmePath ./README.md `
+            -VscePath ./node_modules/.bin/vsce
+
+      - name: Run npm validation
+        run: npm run validate
+
+      - name: Commit updated metadata
+        shell: pwsh
+        run: |
+          if (git diff --quiet -- README.md Extensions.md) {
+            Write-Output 'No extension metadata changes to commit.'
+            return
+          }
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md Extensions.md
+          git commit -m '📚docs: refresh extension metadata'
+          git push

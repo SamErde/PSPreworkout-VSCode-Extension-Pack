@@ -12,6 +12,9 @@
 .PARAMETER OutputPath
     Path to the markdown file to create or overwrite.
 
+.PARAMETER ReadmePath
+    Path to README.md where the generated extension table should be synced.
+
 .PARAMETER VscePath
     Path or command name for the vsce executable.
 
@@ -43,6 +46,10 @@ param(
     [Parameter()]
     [ValidateNotNullOrEmpty()]
     [string]$OutputPath = (Join-Path -Path $PSScriptRoot -ChildPath 'Extensions.md'),
+
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string]$ReadmePath = (Join-Path -Path $PSScriptRoot -ChildPath 'README.md'),
 
     [Parameter()]
     [ValidateNotNullOrEmpty()]
@@ -306,6 +313,8 @@ function Get-MarketplaceExtensionInfo {
     Write-Verbose "Fetching details for: $ExtensionId"
     $MarketplaceExtension = Invoke-VsceShow -ExtensionId $ExtensionId -VscePath $VscePath
     $LatestVersion = @($MarketplaceExtension.versions)[0]
+    $InstallCount = Get-ExtensionStatisticValue -MarketplaceExtension $MarketplaceExtension -StatisticName 'install'
+    $LastUpdated = ConvertTo-MarketplaceDate -Value $MarketplaceExtension.lastUpdated -FieldName 'lastUpdated' -ExtensionId $ExtensionId
 
     [PSCustomObject]@{
         ExtensionId    = $ExtensionId
@@ -313,8 +322,213 @@ function Get-MarketplaceExtensionInfo {
         Publisher      = $MarketplaceExtension.publisher.displayName
         Version        = $LatestVersion.version
         Description    = $MarketplaceExtension.shortDescription
+        InstallCount   = $InstallCount
+        LastUpdated    = $LastUpdated
         MarketplaceUri = "https://marketplace.visualstudio.com/items?itemName=$ExtensionId"
     }
+}
+
+function Get-ExtensionStatisticValue {
+    <#
+    .SYNOPSIS
+        Gets one numeric statistic from Visual Studio Marketplace metadata.
+
+    .DESCRIPTION
+        Finds a named statistic from a marketplace extension response and
+        returns its numeric value. A missing statistic is treated as invalid
+        marketplace data so generated documentation does not silently go stale.
+
+    .PARAMETER MarketplaceExtension
+        Marketplace extension metadata returned by vsce show --json.
+
+    .PARAMETER StatisticName
+        Statistic name to read, such as install or updateCount.
+
+    .OUTPUTS
+        Double statistic value.
+
+    .EXAMPLE
+        Get-ExtensionStatisticValue -MarketplaceExtension $Extension -StatisticName install
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject]$MarketplaceExtension,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$StatisticName
+    )
+
+    $Statistic = @($MarketplaceExtension.statistics) |
+        Where-Object { $_.statisticName -eq $StatisticName } |
+        Select-Object -First 1
+
+    if ($null -eq $Statistic) {
+        $ErrorRecord = [System.Management.Automation.ErrorRecord]::new(
+            [System.InvalidOperationException]::new("Marketplace metadata for '$($MarketplaceExtension.extensionId)' does not include the '$StatisticName' statistic."),
+            'MarketplaceStatisticMissing',
+            [System.Management.Automation.ErrorCategory]::InvalidData,
+            $MarketplaceExtension
+        )
+        $PSCmdlet.ThrowTerminatingError($ErrorRecord)
+    }
+
+    [double]$Statistic.value
+}
+
+function ConvertTo-MarketplaceDate {
+    <#
+    .SYNOPSIS
+        Converts a marketplace timestamp to a date string.
+
+    .DESCRIPTION
+        Parses a marketplace timestamp and formats it as yyyy-MM-dd for
+        readable generated documentation and static badges.
+
+    .PARAMETER Value
+        Timestamp value to parse.
+
+    .PARAMETER FieldName
+        Name of the timestamp field being parsed.
+
+    .PARAMETER ExtensionId
+        Extension ID used in parse error messages.
+
+    .OUTPUTS
+        String in yyyy-MM-dd format.
+
+    .EXAMPLE
+        ConvertTo-MarketplaceDate -Value $Extension.lastUpdated -FieldName lastUpdated -ExtensionId ms-vscode.powershell
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Value,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FieldName,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ExtensionId
+    )
+
+    $ParsedDate = [System.DateTimeOffset]::MinValue
+    if (-not [System.DateTimeOffset]::TryParse($Value, [ref]$ParsedDate)) {
+        $ErrorRecord = [System.Management.Automation.ErrorRecord]::new(
+            [System.FormatException]::new("Marketplace metadata field '$FieldName' for '$ExtensionId' is not a valid timestamp: '$Value'."),
+            'MarketplaceDateParseFailed',
+            [System.Management.Automation.ErrorCategory]::InvalidData,
+            $Value
+        )
+        $PSCmdlet.ThrowTerminatingError($ErrorRecord)
+    }
+
+    $ParsedDate.UtcDateTime.ToString('yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
+}
+
+function ConvertTo-CompactNumber {
+    <#
+    .SYNOPSIS
+        Formats a number for compact badge display.
+
+    .DESCRIPTION
+        Converts large marketplace counts into short invariant strings, such as
+        1.23K, 4.56M, or 7.89B.
+
+    .PARAMETER Value
+        Numeric value to format.
+
+    .OUTPUTS
+        Compact count string.
+
+    .EXAMPLE
+        ConvertTo-CompactNumber -Value 1234567
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateRange(0, [double]::MaxValue)]
+        [double]$Value
+    )
+
+    $Suffixes = @(
+        [PSCustomObject]@{ Threshold = 1000000000; Suffix = 'B' }
+        [PSCustomObject]@{ Threshold = 1000000; Suffix = 'M' }
+        [PSCustomObject]@{ Threshold = 1000; Suffix = 'K' }
+    )
+
+    foreach ($Suffix in $Suffixes) {
+        if ($Value -ge $Suffix.Threshold) {
+            $CompactValue = $Value / $Suffix.Threshold
+            return ('{0:0.##}{1}' -f $CompactValue, $Suffix.Suffix)
+        }
+    }
+
+    ('{0:0}' -f $Value)
+}
+
+function ConvertTo-StaticShieldBadge {
+    <#
+    .SYNOPSIS
+        Creates a static shields.io badge URL.
+
+    .DESCRIPTION
+        Builds a static badge URL from generated marketplace values instead of
+        relying on retired dynamic Visual Studio Marketplace badge endpoints.
+
+    .PARAMETER Label
+        Badge label.
+
+    .PARAMETER Message
+        Badge message.
+
+    .PARAMETER Color
+        Badge color.
+
+    .PARAMETER Style
+        Badge style.
+
+    .OUTPUTS
+        Static shields.io badge URL.
+
+    .EXAMPLE
+        ConvertTo-StaticShieldBadge -Label installs -Message 1.23M
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Label,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Message,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]$Color = 'blue',
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]$Style = 'for-the-badge'
+    )
+
+    $Parameters = [ordered]@{
+        label   = $Label
+        message = $Message
+        color   = $Color
+        style   = $Style
+    }
+
+    $Query = foreach ($Parameter in $Parameters.GetEnumerator()) {
+        '{0}={1}' -f $Parameter.Key, [System.Uri]::EscapeDataString($Parameter.Value)
+    }
+
+    'https://img.shields.io/static/v1?{0}' -f ($Query -join '&')
 }
 
 function ConvertTo-MarkdownTableRow {
@@ -349,15 +563,15 @@ function ConvertTo-MarkdownTableRow {
     )
 
     process {
-        $ShieldBaseUri = 'https://img.shields.io/visual-studio-marketplace'
-        $ExtensionId = ConvertTo-MarkdownTableValue -Value $ExtensionInfo.ExtensionId
         $ExtensionName = ConvertTo-MarkdownTableValue -Value $ExtensionInfo.ExtensionName
         $Publisher = ConvertTo-MarkdownTableValue -Value $ExtensionInfo.Publisher
         $Version = ConvertTo-MarkdownTableValue -Value $ExtensionInfo.Version
         $Description = ConvertTo-MarkdownTableValue -Value $ExtensionInfo.Description
+        $InstallCount = ConvertTo-CompactNumber -Value $ExtensionInfo.InstallCount
+        $LastUpdated = ConvertTo-MarkdownTableValue -Value $ExtensionInfo.LastUpdated
         $MarketplaceUri = $ExtensionInfo.MarketplaceUri
-        $ExtensionInstalls = "![Visual Studio Marketplace Installs]($ShieldBaseUri/i/$ExtensionId`?style=$ShieldStyle&label=installs)"
-        $ExtensionLastUpdated = "![Visual Studio Marketplace Last Updated]($ShieldBaseUri/last-updated/$ExtensionId`?style=$ShieldStyle&label=updated)"
+        $ExtensionInstalls = "![Visual Studio Marketplace Installs]($(ConvertTo-StaticShieldBadge -Label 'installs' -Message $InstallCount -Style $ShieldStyle))"
+        $ExtensionLastUpdated = "![Visual Studio Marketplace Last Updated]($(ConvertTo-StaticShieldBadge -Label 'updated' -Message $LastUpdated -Style $ShieldStyle))"
 
         "|[$ExtensionName]($MarketplaceUri)|$Publisher|$Version|$Description|$ExtensionInstalls|$ExtensionLastUpdated|"
     }
@@ -400,6 +614,97 @@ function ConvertTo-ExtensionMarkdownDocument {
     $Builder.ToString()
 }
 
+function Update-ReadmeExtensionTable {
+    <#
+    .SYNOPSIS
+        Syncs the generated extension table into README.md.
+
+    .DESCRIPTION
+        Replaces the README Extensions Included section with the table from the
+        generated Extensions.md document so both public docs stay consistent.
+
+    .PARAMETER ReadmePath
+        Path to README.md.
+
+    .PARAMETER ExtensionMarkdown
+        Complete generated Extensions.md document.
+
+    .PARAMETER PackageInfo
+        Optional marketplace metadata for this extension pack, used to refresh
+        README header badges.
+
+    .OUTPUTS
+        None.
+
+    .EXAMPLE
+        Update-ReadmeExtensionTable -ReadmePath .\README.md -ExtensionMarkdown $Markdown
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateScript({
+            if (Test-Path -Path $_ -PathType Leaf) {
+                return $true
+            }
+        })]
+        [string]$ReadmePath,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ExtensionMarkdown,
+
+        [Parameter()]
+        [PSCustomObject]$PackageInfo
+    )
+
+    $Readme = Get-Content -Path $ReadmePath -Raw -ErrorAction Stop
+    $Heading = '## Extensions Included'
+    $ReadmeParts = $Readme -split [regex]::Escape($Heading), 2
+    if ($ReadmeParts.Count -ne 2) {
+        $ErrorRecord = [System.Management.Automation.ErrorRecord]::new(
+            [System.InvalidOperationException]::new("README '$ReadmePath' does not contain the '$Heading' heading."),
+            'ReadmeExtensionHeadingMissing',
+            [System.Management.Automation.ErrorCategory]::InvalidData,
+            $ReadmePath
+        )
+        $PSCmdlet.ThrowTerminatingError($ErrorRecord)
+    }
+
+    $Table = ($ExtensionMarkdown -replace '^# Extensions\r?\n\r?\n', '').TrimEnd()
+    $UpdatedReadme = $ReadmeParts[0].TrimEnd() +
+        [Environment]::NewLine +
+        [Environment]::NewLine +
+        $Heading +
+        [Environment]::NewLine +
+        [Environment]::NewLine +
+        $Table +
+        [Environment]::NewLine
+
+    if ($PackageInfo) {
+        $PackageVersion = ConvertTo-MarkdownTableValue -Value $PackageInfo.Version
+        $PackageInstalls = ConvertTo-CompactNumber -Value $PackageInfo.InstallCount
+        $VersionBadge = "[![Version]($(ConvertTo-StaticShieldBadge -Label 'version' -Message $PackageVersion -Style 'flat'))]($($PackageInfo.MarketplaceUri))"
+        $InstallsBadge = "[![Installs]($(ConvertTo-StaticShieldBadge -Label 'installs' -Message $PackageInstalls -Style 'flat'))]($($PackageInfo.MarketplaceUri))"
+        $ReadmeLines = @($UpdatedReadme -split '\r?\n')
+
+        for ($LineIndex = 0; $LineIndex -lt $ReadmeLines.Count; $LineIndex++) {
+            if ($ReadmeLines[$LineIndex].StartsWith('[![Version](')) {
+                $ReadmeLines[$LineIndex] = $VersionBadge
+            } elseif ($ReadmeLines[$LineIndex].StartsWith('[![Installs](')) {
+                $ReadmeLines[$LineIndex] = $InstallsBadge
+            }
+        }
+
+        $UpdatedReadme = ($ReadmeLines -join [Environment]::NewLine).TrimEnd() + [Environment]::NewLine
+    }
+
+    $Utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+    $ResolvedReadmePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ReadmePath)
+    if ($PSCmdlet.ShouldProcess($ResolvedReadmePath, 'Sync generated extension table')) {
+        [System.IO.File]::WriteAllText($ResolvedReadmePath, $UpdatedReadme, $Utf8Encoding)
+    }
+}
+
 function Update-ExtensionInfoDocument {
     <#
     .SYNOPSIS
@@ -418,6 +723,9 @@ function Update-ExtensionInfoDocument {
 
     .PARAMETER VscePath
         Path or command name for the vsce executable.
+
+    .PARAMETER ReadmePath
+        Optional path to README.md where the generated table should be synced.
 
     .PARAMETER PassThru
         Returns the generated markdown document to the pipeline.
@@ -443,6 +751,10 @@ function Update-ExtensionInfoDocument {
         [string]$VscePath,
 
         [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]$ReadmePath,
+
+        [Parameter()]
         [switch]$PassThru
     )
 
@@ -463,6 +775,18 @@ function Update-ExtensionInfoDocument {
         [System.IO.File]::WriteAllText($ResolvedOutputPath, $Markdown, $Utf8Encoding)
     }
 
+    if ($ReadmePath) {
+        $PackageManifest = Get-Content -Path $PackagePath -Raw -ErrorAction Stop |
+            ConvertFrom-Json -ErrorAction Stop
+        $PackageInfo = $null
+        if ('publisher' -in $PackageManifest.PSObject.Properties.Name -and 'name' -in $PackageManifest.PSObject.Properties.Name) {
+            $PackageExtensionId = "$($PackageManifest.publisher).$($PackageManifest.name)"
+            $PackageInfo = Get-MarketplaceExtensionInfo -ExtensionId $PackageExtensionId -VscePath $VscePath -ErrorAction Stop
+        }
+
+        Update-ReadmeExtensionTable -ReadmePath $ReadmePath -ExtensionMarkdown $Markdown -PackageInfo $PackageInfo
+    }
+
     if ($PassThru.IsPresent) {
         $Markdown
     }
@@ -470,5 +794,5 @@ function Update-ExtensionInfoDocument {
 
 if ($MyInvocation.InvocationName -ne '.') {
     Set-StrictMode -Version Latest
-    Update-ExtensionInfoDocument -PackagePath $PackagePath -OutputPath $OutputPath -VscePath $VscePath -PassThru:$PassThru
+    Update-ExtensionInfoDocument -PackagePath $PackagePath -OutputPath $OutputPath -VscePath $VscePath -ReadmePath $ReadmePath -PassThru:$PassThru
 }
