@@ -345,7 +345,7 @@ function ConvertTo-MarkdownTableRow {
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [string]$ShieldStyle = 'flat-square'
+        [string]$ShieldStyle = 'for-the-badge'
     )
 
     process {
@@ -356,8 +356,8 @@ function ConvertTo-MarkdownTableRow {
         $Version = ConvertTo-MarkdownTableValue -Value $ExtensionInfo.Version
         $Description = ConvertTo-MarkdownTableValue -Value $ExtensionInfo.Description
         $MarketplaceUri = $ExtensionInfo.MarketplaceUri
-        $ExtensionInstalls = "![Visual Studio Marketplace Installs]($ShieldBaseUri/i/$ExtensionId`?style=$ShieldStyle)"
-        $ExtensionLastUpdated = "![Visual Studio Marketplace Last Updated]($ShieldBaseUri/last-updated/$ExtensionId`?style=$ShieldStyle)"
+        $ExtensionInstalls = "![Visual Studio Marketplace Installs]($ShieldBaseUri/i/$ExtensionId`?style=$ShieldStyle&label=installs)"
+        $ExtensionLastUpdated = "![Visual Studio Marketplace Last Updated]($ShieldBaseUri/last-updated/$ExtensionId`?style=$ShieldStyle&label=updated)"
 
         "|[$ExtensionName]($MarketplaceUri)|$Publisher|$Version|$Description|$ExtensionInstalls|$ExtensionLastUpdated|"
     }

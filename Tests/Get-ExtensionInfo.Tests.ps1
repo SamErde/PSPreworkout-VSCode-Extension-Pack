@@ -125,7 +125,7 @@ Describe 'ConvertTo-ExtensionMarkdownDocument' {
 
         $Result = ConvertTo-ExtensionMarkdownDocument -ExtensionInfo $ExtensionInfo
 
-        $Result | Should -Match 'last-updated/publisher.sample-extension\?style=flat-square'
+        $Result | Should -Match 'last-updated/publisher.sample-extension\?style=for-the-badge&label=updated'
         $Result | Should -Not -Match '\\\?style='
     }
 }
@@ -172,7 +172,7 @@ Describe 'ConvertTo-MarkdownTableRow' {
 
         $Result = ConvertTo-MarkdownTableRow -ExtensionInfo $ExtensionInfo
 
-        $Result | Should -Be '|[Sample Extension](https://marketplace.visualstudio.com/items?itemName=publisher.sample-extension)|Publisher|1.2.3|Sample description|![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/publisher.sample-extension?style=flat-square)|![Visual Studio Marketplace Last Updated](https://img.shields.io/visual-studio-marketplace/last-updated/publisher.sample-extension?style=flat-square)|'
+        $Result | Should -Be '|[Sample Extension](https://marketplace.visualstudio.com/items?itemName=publisher.sample-extension)|Publisher|1.2.3|Sample description|![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/publisher.sample-extension?style=for-the-badge&label=installs)|![Visual Studio Marketplace Last Updated](https://img.shields.io/visual-studio-marketplace/last-updated/publisher.sample-extension?style=for-the-badge&label=updated)|'
     }
 }
 
