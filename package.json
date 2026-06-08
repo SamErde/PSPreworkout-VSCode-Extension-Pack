@@ -35,7 +35,7 @@
     "validate": "npm run lint:markdown && npm run lint:spelling && npm run package && npm audit --audit-level=moderate"
   },
   "devDependencies": {
-    "@vscode/vsce": "3.9.1",
+    "@vscode/vsce": "3.9.2",
     "cspell": "^10.0.1",
     "markdownlint-cli2": "^0.22.1"
   },
