@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   scorecard:
     name: OpenSSF Scorecard
@@ -18,8 +22,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      id-token: write
-      security-events: write
+      id-token: write # publish results to the OpenSSF Scorecard API and badge
+      security-events: write # upload the SARIF results to code scanning
 
     steps:
       - name: Checkout

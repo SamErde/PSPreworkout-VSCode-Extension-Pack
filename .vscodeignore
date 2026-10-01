@@ -3,12 +3,14 @@
 .vscode/**
 .vscode-test/**
 Tests/**
+scripts/**
 dist/**
 node_modules/**
 .editorconfig
 .gitattributes
 .gitignore
 .markdownlint-cli2.yaml
+.nvmrc
 .pre-commit-config.yaml
 .vscodeignore
 cspell.json
