@@ -4,6 +4,7 @@ name: Release
 # Manual runs default to a dry run that only builds and verifies the VSIX; they can publish
 # only when started from a release tag with dry_run unchecked (for example, to retry a failed publish).
 on:
+  pull_request: # TEMPORARY: dry-run evidence only; reverted before merge
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
