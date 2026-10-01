@@ -24,12 +24,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run OpenSSF Scorecard
-        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
-        with:
-          results_file: scorecard-results.sarif
-          results_format: sarif
-          publish_results: false
+      # The Scorecard GitHub Action only runs on the default branch.
+      - name: Generate OpenSSF Scorecard SARIF
+        env:
+          ENABLE_SARIF: "true"
+          GITHUB_AUTH_TOKEN: ${{ github.token }}
+        run: |
+          curl --fail --location --silent --show-error \
+            --output scorecard.tar.gz \
+            https://github.com/ossf/scorecard/releases/download/v5.5.0/scorecard_5.5.0_linux_amd64.tar.gz
+          echo "83b90a05c1540ef1390db1cd5711e5fd04be9c1d8537fb84d39d02092d6a8dff  scorecard.tar.gz" | sha256sum --check
+          tar -xzf scorecard.tar.gz scorecard
+          ./scorecard --repo=github.com/SamErde/PSPreworkout-VSCode-Extension-Pack \
+            --format=sarif --results-file=scorecard-results.sarif
+          test -s scorecard-results.sarif
 
       - name: Upload Scorecard SARIF
         uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
