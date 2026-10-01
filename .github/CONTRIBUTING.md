@@ -32,7 +32,7 @@ Releases are published by the [Release workflow](workflows/release.yml). Publish
 
 ### One-time setup
 
-1. Create the `release` environment with a required reviewer and a deployment tag rule for `v*`.
+1. Create the `release` environment with a required reviewer and a deployment tag rule for `v*`. Protect `v*` tags with active tag rulesets: allow only repository admins to create them, and do not allow anyone to update or delete them. Use separate rulesets so the creation bypass cannot bypass the immutability rules.
 2. Configure Visual Studio Marketplace authentication on the `release` environment. Use one of:
    - **Microsoft Entra ID (preferred):** set the `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` environment variables for an app registration with a federated credential for this repository's `release` environment, and add that identity to the `SamErde` Marketplace publisher.
    - **Personal access token:** set the `VSCE_PAT` environment secret to an Azure DevOps PAT scoped to *Marketplace (Manage)*.
@@ -51,7 +51,7 @@ Releases are published by the [Release workflow](workflows/release.yml). Publish
    gh workflow run release.yml --ref main -f dry_run=true
    ```
 
-3. Tag the release commit and push the tag. The tag must match the `package.json` version:
+3. As a repository admin, tag the release commit and push the tag. The tag must match the `package.json` version and cannot be moved or deleted after creation:
 
    ```shell
    git tag v1.2.3

@@ -162,8 +162,10 @@ jobs:
 
   publish-open-vsx:
     name: Publish to Open VSX
-    needs: build
-    if: needs.build.outputs.should-publish == 'true' && vars.PUBLISH_OPEN_VSX == 'true'
+    needs:
+      - build
+      - publish-marketplace
+    if: needs.build.outputs.should-publish == 'true' && needs.publish-marketplace.result == 'success' && vars.PUBLISH_OPEN_VSX == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: release
