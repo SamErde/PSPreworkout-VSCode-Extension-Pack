@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   scorecard:
     name: OpenSSF Scorecard
@@ -18,8 +22,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      id-token: write
-      security-events: write
+      id-token: write # publish results to the OpenSSF Scorecard API and badge
+      security-events: write # upload the SARIF results to code scanning
 
     steps:
       - name: Checkout
@@ -35,6 +39,6 @@ jobs:
           publish_results: true
 
       - name: Upload Scorecard SARIF
-        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
           sarif_file: scorecard-results.sarif

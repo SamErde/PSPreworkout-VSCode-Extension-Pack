@@ -5,13 +5,55 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  validate:
-    name: Validate (${{ matrix.os }})
+  lint-and-package:
+    name: Lint and package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Lint, package, and verify VSIX contents
+        run: npm run validate
+
+      - name: List packaged files
+        run: npx --no-install vsce ls --no-dependencies
+
+      - name: Audit npm dependencies
+        run: npm run audit:dependencies
+
+      - name: Upload VSIX
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vsix
+          path: dist/pspreworkout-powershell-extensions-pack.vsix
+          if-no-files-found: error
+          retention-days: 7
+
+  powershell-tests:
+    name: PowerShell tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
@@ -24,36 +66,79 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install npm dependencies
-        run: npm ci
-
-      - name: Run npm validation
-        run: npm run validate
+          persist-credentials: false
 
       - name: Install PowerShell test modules
         shell: pwsh
         run: |
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module -Name Pester, PSScriptAnalyzer -Scope CurrentUser -Force -SkipPublisherCheck
+          Install-Module -Name Pester -RequiredVersion 6.2.0 -Scope CurrentUser -Force -SkipPublisherCheck
+          Install-Module -Name PSScriptAnalyzer -RequiredVersion 1.25.0 -Scope CurrentUser -Force
 
       - name: Run PSScriptAnalyzer
         shell: pwsh
-        run: Invoke-ScriptAnalyzer -Path ./Get-ExtensionInfo.ps1 -Severity Warning, Error -EnableExit
+        run: |
+          Import-Module -Name PSScriptAnalyzer -RequiredVersion 1.25.0
+          $Results = foreach ($Path in './Get-ExtensionInfo.ps1', './scripts/Test-VsixContent.ps1') {
+            Invoke-ScriptAnalyzer -Path $Path -Severity Warning, Error
+          }
+          $Results | Format-Table -AutoSize | Out-String -Width 200 | Write-Output
+          if ($Results) {
+            throw "PSScriptAnalyzer reported $(@($Results).Count) issue(s)."
+          }
 
       - name: Run Pester
         shell: pwsh
         run: |
+          Import-Module -Name Pester -RequiredVersion 6.2.0
           $Config = New-PesterConfiguration
           $Config.Run.Path = './Tests'
           $Config.Run.Exit = $true
           $Config.Output.CIFormat = 'GithubActions'
+          $Config.TestResult.Enabled = $true
+          $Config.TestResult.OutputPath = 'test-results.xml'
           $Config.CodeCoverage.Enabled = $true
-          $Config.CodeCoverage.Path = './Get-ExtensionInfo.ps1'
+          $Config.CodeCoverage.Path = @('./Get-ExtensionInfo.ps1', './scripts/Test-VsixContent.ps1')
+          $Config.CodeCoverage.OutputPath = 'coverage.xml'
           Invoke-Pester -Configuration $Config
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results-${{ matrix.os }}
+          path: |
+            test-results.xml
+            coverage.xml
+          if-no-files-found: warn
+          retention-days: 7
+
+  workflow-lint:
+    name: Workflow lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl --fail --silent --show-error --location --output "${RUNNER_TEMP}/${archive}" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          echo "${ACTIONLINT_SHA256}  ${RUNNER_TEMP}/${archive}" | sha256sum --check --strict
+          tar -xzf "${RUNNER_TEMP}/${archive}" -C "${RUNNER_TEMP}" actionlint
+          "${RUNNER_TEMP}/actionlint" -color
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        with:
+          advanced-security: false
+          version: 1.30.1
