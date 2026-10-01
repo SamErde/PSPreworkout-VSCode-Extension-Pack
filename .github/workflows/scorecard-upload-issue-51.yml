@@ -35,8 +35,9 @@ jobs:
             https://github.com/ossf/scorecard/releases/download/v5.5.0/scorecard_5.5.0_linux_amd64.tar.gz
           echo "83b90a05c1540ef1390db1cd5711e5fd04be9c1d8537fb84d39d02092d6a8dff  scorecard.tar.gz" | sha256sum --check
           tar -xzf scorecard.tar.gz scorecard
+          printf 'version: 1\npolicies:\n  Branch-Protection:\n    score: 10\n    mode: enforced\n  Pinned-Dependencies:\n    score: 10\n    mode: enforced\n' > scorecard-policy.yaml
           ./scorecard --repo=github.com/SamErde/PSPreworkout-VSCode-Extension-Pack \
-            --format=sarif --output=scorecard-results.sarif
+            --format=sarif --policy=scorecard-policy.yaml --output=scorecard-results.sarif
           test -s scorecard-results.sarif
 
       - name: Upload Scorecard SARIF
