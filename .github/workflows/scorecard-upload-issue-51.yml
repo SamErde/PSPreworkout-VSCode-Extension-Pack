@@ -1,0 +1,38 @@
+name: Scorecard SARIF upload verification (issue 51)
+
+on:
+  push:
+    branches:
+      - samerde-verify-scorecard-sarif-upload-before-cod
+
+permissions:
+  contents: read
+
+jobs:
+  scorecard-upload:
+    name: Verify Scorecard SARIF upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run OpenSSF Scorecard
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: scorecard-results.sarif
+          results_format: sarif
+          publish_results: false
+
+      - name: Upload Scorecard SARIF
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: scorecard-results.sarif
+          category: issue-51-premerge
