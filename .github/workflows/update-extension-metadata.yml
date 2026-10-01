@@ -13,27 +13,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  update-extension-metadata:
-    name: Update extension metadata
+  generate:
+    name: Generate extension metadata
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write
+      contents: read
+    outputs:
+      changed: ${{ steps.detect.outputs.changed }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 22
-          cache: npm
+          node-version-file: .nvmrc
+          package-manager-cache: false
 
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Update extension metadata
         shell: pwsh
@@ -47,16 +49,87 @@ jobs:
       - name: Run npm validation
         run: npm run validate
 
-      - name: Commit updated metadata
-        shell: pwsh
+      - name: Detect metadata changes
+        id: detect
         run: |
-          if (git diff --quiet -- README.md Extensions.md) {
+          if git diff --quiet -- README.md Extensions.md; then
+            echo 'No extension metadata changes detected.'
+            echo 'changed=false' >> "${GITHUB_OUTPUT}"
+          else
+            git diff --stat -- README.md Extensions.md
+            echo 'changed=true' >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Upload metadata
+        if: steps.detect.outputs.changed == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: extension-metadata
+          path: |
+            README.md
+            Extensions.md
+          if-no-files-found: error
+          retention-days: 1
+
+  commit:
+    name: Commit extension metadata
+    needs: generate
+    if: needs.generate.outputs.changed == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # push the regenerated README.md and Extensions.md to main
+
+    steps:
+      # This job only runs git; it never installs or executes repository dependencies. It keeps the
+      # checkout credentials so it can push, which is why generation runs in a separate read-only job.
+      - name: Checkout # zizmor: ignore[artipacked] push requires persisted credentials; no artifacts are uploaded here
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Download metadata
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: extension-metadata
+          path: ${{ runner.temp }}/extension-metadata
+
+      - name: Verify downloaded metadata
+        shell: pwsh
+        env:
+          METADATA_PATH: ${{ runner.temp }}/extension-metadata
+        run: |
+          $Items = @(Get-ChildItem -LiteralPath $env:METADATA_PATH -Recurse -Force)
+          $Names = @($Items | ForEach-Object { [System.IO.Path]::GetRelativePath($env:METADATA_PATH, $_.FullName) } | Sort-Object)
+          if (($Names -join ',') -cne 'Extensions.md,README.md') {
+            throw "Unexpected metadata artifact contents: $($Names -join ', ')"
+          }
+          foreach ($Item in $Items) {
+            if ($Item.PSIsContainer -or $Item.LinkType) {
+              throw "Metadata artifact entry is not a regular file: $($Item.Name)"
+            }
+          }
+
+      - name: Commit and push metadata
+        shell: pwsh
+        env:
+          METADATA_PATH: ${{ runner.temp }}/extension-metadata
+        run: |
+          Copy-Item -LiteralPath (Join-Path $env:METADATA_PATH 'README.md') -Destination ./README.md -Force
+          Copy-Item -LiteralPath (Join-Path $env:METADATA_PATH 'Extensions.md') -Destination ./Extensions.md -Force
+
+          git diff --quiet -- README.md Extensions.md
+          if ($LASTEXITCODE -eq 0) {
             Write-Output 'No extension metadata changes to commit.'
             return
           }
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add README.md Extensions.md
+          git add -- README.md Extensions.md
           git commit -m '📚docs: refresh extension metadata'
-          git push
+          if ($LASTEXITCODE -ne 0) { throw 'git commit failed.' }
+
+          # A plain push is rejected (never forced) if main moved since this run started; the next scheduled run retries.
+          git push origin HEAD:refs/heads/main
+          if ($LASTEXITCODE -ne 0) { throw 'git push failed. main may have moved; the next scheduled run will retry.' }
