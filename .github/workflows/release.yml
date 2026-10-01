@@ -1,0 +1,249 @@
+name: Release
+
+# Tag pushes (vMAJOR.MINOR.PATCH) build, publish, and create a GitHub release.
+# Manual runs default to a dry run that only builds and verifies the VSIX; they can publish
+# only when started from a release tag with dry_run unchecked (for example, to retry a failed publish).
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and verify only. Publishing also requires running from a release tag.
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VSIX_NAME: pspreworkout-powershell-extensions-pack.vsix
+
+jobs:
+  build:
+    name: Build and verify VSIX
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      should-publish: ${{ steps.mode.outputs.should-publish }}
+
+    steps:
+      - name: Determine release mode
+        id: mode
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          should_publish=false
+          if [ "${REF_TYPE}" = 'tag' ]; then
+            if [ "${EVENT_NAME}" = 'push' ] || [ "${DRY_RUN}" = 'false' ]; then
+              should_publish=true
+            fi
+          fi
+          echo "should-publish=${should_publish}" >> "${GITHUB_OUTPUT}"
+          echo "Publish: ${should_publish} (event: ${EVENT_NAME}, ref type: ${REF_TYPE}, dry run: ${DRY_RUN:-n/a})"
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Verify tag matches package.json version
+        if: github.ref_type == 'tag'
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "${REF_NAME}" != "v${version}" ]; then
+            echo "::error::Tag ${REF_NAME} does not match package.json version v${version}."
+            exit 1
+          fi
+          echo "Tag ${REF_NAME} matches package.json version."
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Lint, package, and verify VSIX contents
+        run: npm run validate
+
+      - name: Audit npm dependencies
+        run: npm run audit:dependencies
+
+      - name: Generate checksum
+        working-directory: dist
+        run: |
+          sha256sum "${VSIX_NAME}" > "${VSIX_NAME}.sha256"
+          cat "${VSIX_NAME}.sha256" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload VSIX
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-vsix
+          path: |
+            dist/${{ env.VSIX_NAME }}
+            dist/${{ env.VSIX_NAME }}.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-marketplace:
+    name: Publish to Visual Studio Marketplace
+    needs: build
+    if: needs.build.outputs.should-publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      contents: read
+      id-token: write # OIDC token for azure/login when publishing with Microsoft Entra ID
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Download VSIX
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-vsix
+          path: ${{ runner.temp }}/release
+
+      - name: Verify checksum
+        working-directory: ${{ runner.temp }}/release
+        run: sha256sum --check --strict "${VSIX_NAME}.sha256"
+
+      - name: Sign in to Azure with OIDC
+        if: vars.AZURE_CLIENT_ID != ''
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Publish with Microsoft Entra ID
+        if: vars.AZURE_CLIENT_ID != ''
+        env:
+          VSIX_PATH: ${{ runner.temp }}/release/${{ env.VSIX_NAME }}
+        run: npx --no-install vsce publish --packagePath "${VSIX_PATH}" --azure-credential --skip-duplicate
+
+      - name: Publish with personal access token
+        if: vars.AZURE_CLIENT_ID == ''
+        env:
+          VSIX_PATH: ${{ runner.temp }}/release/${{ env.VSIX_NAME }}
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -z "${VSCE_PAT}" ]; then
+            echo '::error::Set the VSCE_PAT secret or the AZURE_CLIENT_ID and AZURE_TENANT_ID variables on the release environment.'
+            exit 1
+          fi
+          npx --no-install vsce publish --packagePath "${VSIX_PATH}" --skip-duplicate
+
+  publish-open-vsx:
+    name: Publish to Open VSX
+    needs: build
+    if: needs.build.outputs.should-publish == 'true' && vars.PUBLISH_OPEN_VSX == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Download VSIX
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-vsix
+          path: ${{ runner.temp }}/release
+
+      - name: Verify checksum
+        working-directory: ${{ runner.temp }}/release
+        run: sha256sum --check --strict "${VSIX_NAME}.sha256"
+
+      - name: Publish
+        env:
+          VSIX_PATH: ${{ runner.temp }}/release/${{ env.VSIX_NAME }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -z "${OVSX_PAT}" ]; then
+            echo '::error::Set the OVSX_PAT secret on the release environment.'
+            exit 1
+          fi
+          npx --no-install ovsx publish "${VSIX_PATH}" --skip-duplicate
+
+  github-release:
+    name: Create GitHub release
+    needs:
+      - build
+      - publish-marketplace
+      - publish-open-vsx
+    if: >-
+      !cancelled()
+      && needs.build.outputs.should-publish == 'true'
+      && needs.publish-marketplace.result == 'success'
+      && (needs.publish-open-vsx.result == 'success' || needs.publish-open-vsx.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the GitHub release and upload the VSIX assets
+
+    steps:
+      - name: Download VSIX
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-vsix
+          path: ${{ runner.temp }}/release
+
+      - name: Verify checksum
+        working-directory: ${{ runner.temp }}/release
+        run: sha256sum --check --strict "${VSIX_NAME}.sha256"
+
+      - name: Create release
+        working-directory: ${{ runner.temp }}/release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if gh release view "${TAG_NAME}" > /dev/null 2>&1; then
+            echo "Release ${TAG_NAME} already exists; uploading assets with --clobber."
+            gh release upload "${TAG_NAME}" "${VSIX_NAME}" "${VSIX_NAME}.sha256" --clobber
+          else
+            gh release create "${TAG_NAME}" "${VSIX_NAME}" "${VSIX_NAME}.sha256" \
+              --verify-tag --title "${TAG_NAME}" --generate-notes
+          fi

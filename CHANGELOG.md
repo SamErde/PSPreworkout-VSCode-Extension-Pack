@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Hardened the GitHub Actions workflows and added a gated release workflow that publishes to the Visual Studio Marketplace and, optionally, Open VSX.
+
 ## [0.1.2] - 2025-06-21
 
 Repository configuration, community health files, and metadata have been updated in addition to the changes noted below.
