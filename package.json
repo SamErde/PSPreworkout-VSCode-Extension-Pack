@@ -32,12 +32,15 @@
     "package": "vsce package --no-dependencies --skip-license --out dist/pspreworkout-powershell-extensions-pack.vsix",
     "lint:markdown": "markdownlint-cli2",
     "lint:spelling": "cspell .",
-    "validate": "npm run lint:markdown && npm run lint:spelling && npm run package && npm audit --omit=dev --audit-level=moderate"
+    "verify:vsix": "pwsh -NoProfile -File ./scripts/Test-VsixContent.ps1",
+    "audit:dependencies": "npm audit --audit-level=high",
+    "validate": "npm run lint:markdown && npm run lint:spelling && npm run package && npm run verify:vsix"
   },
   "devDependencies": {
     "@vscode/vsce": "4.0.0",
     "cspell": "^10.3.4",
-    "markdownlint-cli2": "^0.23.3"
+    "markdownlint-cli2": "^0.23.3",
+    "ovsx": "1.2.0"
   },
   "extensionPack": [
     "adpyke.codesnap",
