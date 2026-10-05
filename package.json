@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@vscode/vsce": "4.0.0",
-    "cspell": "^10.3.4",
+    "cspell": "^10.3.5",
     "markdownlint-cli2": "^0.23.3",
     "ovsx": "1.2.0"
   },
