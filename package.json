@@ -37,9 +37,9 @@
     "validate": "npm run lint:markdown && npm run lint:spelling && npm run package && npm run verify:vsix"
   },
   "devDependencies": {
-    "@vscode/vsce": "4.1.0",
-    "cspell": "^10.4.1",
-    "markdownlint-cli2": "^0.24.0",
+    "@vscode/vsce": "4.1.1",
+    "cspell": "^10.5.1",
+    "markdownlint-cli2": "^0.24.1",
     "ovsx": "1.4.0"
   },
   "extensionPack": [
